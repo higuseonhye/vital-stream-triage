@@ -1,0 +1,462 @@
+{
+  "suite": "vital-stream-triage",
+  "version": "0.1.0",
+  "synthetic": true,
+  "seed": 0,
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "cpu_count": 12,
+    "numpy": "2.4.3",
+    "torch": "2.13.0+cpu",
+    "torch_num_threads": 6,
+    "cuda_available": false,
+    "serving_device": "cpu",
+    "serving_threads": 1
+  },
+  "cohort": {
+    "patients": 400,
+    "hours": 48,
+    "train_patients": 280,
+    "test_patients": 120,
+    "events": 86,
+    "train_loss": 0.15119772050467836,
+    "parameters": 6025,
+    "epochs": 20
+  },
+  "imputation": {
+    "lab_missing_rate": 0.9583333333333334,
+    "methods": [
+      {
+        "method": "zero",
+        "missing_rate": 0.9583333333333334,
+        "standardized_mse": 412.97814612621255,
+        "decay_reflection": -0.009558752868883982,
+        "mean_prior_pull": 1.465790169711947,
+        "per_feature": [
+          {
+            "name": "wbc",
+            "korean": "\ubc31\ud608\uad6c",
+            "mse": 68.24836400604106,
+            "standardized_mse": 26.659517189859777,
+            "decay_reflection": 0.003129439371850727,
+            "mean_prior_pull": 0.4030975183795729,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hb",
+            "korean": "\ud5e4\ubaa8\uae00\ub85c\ube48",
+            "mse": 165.69361456366974,
+            "standardized_mse": 98.04355891341405,
+            "decay_reflection": -0.019098430749883922,
+            "mean_prior_pull": 0.46231238797805324,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hct",
+            "korean": "\ud5e4\ub9c8\ud1a0\ud06c\ub9bf",
+            "mse": 1452.797994817348,
+            "standardized_mse": 118.59575467896715,
+            "decay_reflection": -0.009428745128817539,
+            "mean_prior_pull": 1.7548578062160805,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "platelet",
+            "korean": "\ud608\uc18c\ud310",
+            "mse": 53283.99782954681,
+            "standardized_mse": 33.30249864346675,
+            "decay_reflection": 0.0036973729784957002,
+            "mean_prior_pull": 0.5991798313938809,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bilirubin",
+            "korean": "\ube4c\ub9ac\ub8e8\ube48",
+            "mse": 0.5564959350389258,
+            "standardized_mse": 11.497849897498465,
+            "decay_reflection": -0.0068896750376789325,
+            "mean_prior_pull": 1.003259179592246,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "creatinine",
+            "korean": "\ud06c\ub808\uc544\ud2f0\ub2cc",
+            "mse": 0.8551515356735575,
+            "standardized_mse": 26.393565915850544,
+            "decay_reflection": 0.014157810045785932,
+            "mean_prior_pull": 0.986087814946933,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bun",
+            "korean": "BUN",
+            "mse": 283.90332350459425,
+            "standardized_mse": 23.175781510579125,
+            "decay_reflection": -0.015283865858495949,
+            "mean_prior_pull": 1.5501327180694076,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "crp",
+            "korean": "CRP",
+            "mse": 1.878704168077615,
+            "standardized_mse": 6.210592291165668,
+            "decay_reflection": -0.028060521952849093,
+            "mean_prior_pull": 1.256112836568915,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "lactate",
+            "korean": "\uc816\uc0b0",
+            "mse": 1.787212783389408,
+            "standardized_mse": 19.857919815437867,
+            "decay_reflection": -0.034151168601543075,
+            "mean_prior_pull": 0.8457571963200491,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "sodium",
+            "korean": "\ub098\ud2b8\ub968",
+            "mse": 19307.158742567328,
+            "standardized_mse": 3989.0823848279592,
+            "decay_reflection": -0.0126077756792587,
+            "mean_prior_pull": 5.294979236511931,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "potassium",
+            "korean": "\uce7c\ub968",
+            "mse": 17.094616533372594,
+            "standardized_mse": 189.94018370413994,
+            "decay_reflection": -0.0006107209453289511,
+            "mean_prior_pull": 1.9679153408543508,
+            "evaluated_cells": 16614
+          }
+        ]
+      },
+      {
+        "method": "forward",
+        "missing_rate": 0.9583333333333334,
+        "standardized_mse": 0.8697354783612518,
+        "decay_reflection": 0.0,
+        "mean_prior_pull": 0.0,
+        "per_feature": [
+          {
+            "name": "wbc",
+            "korean": "\ubc31\ud608\uad6c",
+            "mse": 2.2657543302446106,
+            "standardized_mse": 0.8850602852518008,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hb",
+            "korean": "\ud5e4\ubaa8\uae00\ub85c\ube48",
+            "mse": 0.5193587756284519,
+            "standardized_mse": 0.3073128849872496,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hct",
+            "korean": "\ud5e4\ub9c8\ud1a0\ud06c\ub9bf",
+            "mse": 3.816134142472466,
+            "standardized_mse": 0.31152115448754825,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "platelet",
+            "korean": "\ud608\uc18c\ud310",
+            "mse": 719.4729417497291,
+            "standardized_mse": 0.44967058859358067,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bilirubin",
+            "korean": "\ube4c\ub9ac\ub8e8\ube48",
+            "mse": 0.022289192682926923,
+            "standardized_mse": 0.460520509977829,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "creatinine",
+            "korean": "\ud06c\ub808\uc544\ud2f0\ub2cc",
+            "mse": 0.029620161011758937,
+            "standardized_mse": 0.91420250036293,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bun",
+            "korean": "BUN",
+            "mse": 8.280149983758175,
+            "standardized_mse": 0.6759306109190346,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "crp",
+            "korean": "CRP",
+            "mse": 0.2639939589968657,
+            "standardized_mse": 0.8727073024689773,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "lactate",
+            "korean": "\uc816\uc0b0",
+            "mse": 0.2526474127202299,
+            "standardized_mse": 2.807193474669222,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "sodium",
+            "korean": "\ub098\ud2b8\ub968",
+            "mse": 3.395322367069628,
+            "standardized_mse": 0.7015128857581874,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "potassium",
+            "korean": "\uce7c\ub968",
+            "mse": 0.10633122580476685,
+            "standardized_mse": 1.1814580644974098,
+            "decay_reflection": 0.0,
+            "mean_prior_pull": 0.0,
+            "evaluated_cells": 16614
+          }
+        ]
+      },
+      {
+        "method": "time_decay",
+        "missing_rate": 0.9583333333333334,
+        "standardized_mse": 0.7225442617051502,
+        "decay_reflection": 0.48549513289805923,
+        "mean_prior_pull": 0.3389501571013296,
+        "per_feature": [
+          {
+            "name": "wbc",
+            "korean": "\ubc31\ud608\uad6c",
+            "mse": 1.7455832407742142,
+            "standardized_mse": 0.6818684534274273,
+            "decay_reflection": 0.49969390356786875,
+            "mean_prior_pull": 0.3525054609374896,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hb",
+            "korean": "\ud5e4\ubaa8\uae00\ub85c\ube48",
+            "mse": 0.4717411588753651,
+            "standardized_mse": 0.2791367803996243,
+            "decay_reflection": 0.5294355905209034,
+            "mean_prior_pull": 0.1424043100884295,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "hct",
+            "korean": "\ud5e4\ub9c8\ud1a0\ud06c\ub9bf",
+            "mse": 3.457649052673796,
+            "standardized_mse": 0.28225706552439156,
+            "decay_reflection": 0.5145626411435669,
+            "mean_prior_pull": 0.1418180525045365,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "platelet",
+            "korean": "\ud608\uc18c\ud310",
+            "mse": 600.0535081289387,
+            "standardized_mse": 0.3750334425805867,
+            "decay_reflection": 0.5280913024114637,
+            "mean_prior_pull": 0.2030984081477867,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bilirubin",
+            "korean": "\ube4c\ub9ac\ub8e8\ube48",
+            "mse": 0.019306720571845046,
+            "standardized_mse": 0.3988991853686993,
+            "decay_reflection": 0.5201524529045288,
+            "mean_prior_pull": 0.20142310634422017,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "creatinine",
+            "korean": "\ud06c\ub808\uc544\ud2f0\ub2cc",
+            "mse": 0.02348728619086329,
+            "standardized_mse": 0.7249162404587435,
+            "decay_reflection": 0.5055428381493183,
+            "mean_prior_pull": 0.4298250079803062,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "bun",
+            "korean": "BUN",
+            "mse": 7.039585991063561,
+            "standardized_mse": 0.5746600809031477,
+            "decay_reflection": 0.5134113060315544,
+            "mean_prior_pull": 0.35310045605424134,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "crp",
+            "korean": "CRP",
+            "mse": 0.2387505261151943,
+            "standardized_mse": 0.78925793757089,
+            "decay_reflection": 0.5129425462147261,
+            "mean_prior_pull": 0.25723595798909193,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "lactate",
+            "korean": "\uc816\uc0b0",
+            "mse": 0.22371633149420275,
+            "standardized_mse": 2.4857370166022528,
+            "decay_reflection": 0.30504676683561976,
+            "mean_prior_pull": 0.7454716688638928,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "sodium",
+            "korean": "\ub098\ud2b8\ub968",
+            "mse": 2.6839023411558887,
+            "standardized_mse": 0.5545252770983241,
+            "decay_reflection": 0.49132511632046516,
+            "mean_prior_pull": 0.3518465450526058,
+            "evaluated_cells": 16614
+          },
+          {
+            "name": "potassium",
+            "korean": "\uce7c\ub968",
+            "mse": 0.0721525858940309,
+            "standardized_mse": 0.8016953988225655,
+            "decay_reflection": 0.42024199777863663,
+            "mean_prior_pull": 0.549722754152025,
+            "evaluated_cells": 16614
+          }
+        ]
+      }
+    ]
+  },
+  "alert_fatigue": {
+    "score_threshold": 0.7,
+    "entropy_threshold_nats": 0.3,
+    "entropy_definition": "-sum p_k ln p_k",
+    "evaluated_hours": 4880,
+    "positive_hours": 180,
+    "baseline": {
+      "tp": 50,
+      "fp": 92,
+      "fn": 130,
+      "tn": 4608,
+      "precision": 0.352112676056338,
+      "recall": 0.2777777777777778,
+      "alarms": 142
+    },
+    "fusion": {
+      "tp": 36,
+      "fp": 39,
+      "fn": 144,
+      "tn": 4661,
+      "precision": 0.48,
+      "recall": 0.2,
+      "alarms": 75
+    },
+    "false_alarm_reduction": 0.5760869565217391,
+    "precision_defense": 1.3632,
+    "min_score_among_fusion_alarms": 0.9284158945083618,
+    "by_class": [
+      {
+        "class": "stable",
+        "hours": 4391,
+        "mean_score": 0.03475479409098625,
+        "p50_score": 2.6390032871859148e-05,
+        "p90_score": 0.03044891357421875,
+        "mean_entropy": 0.19421179592609406,
+        "baseline_alarm_rate": 0.018674561603279436,
+        "fusion_alarm_rate": 0.0084263265770895
+      },
+      {
+        "class": "transient",
+        "hours": 309,
+        "mean_score": 0.06199071928858757,
+        "p50_score": 0.00014798552729189396,
+        "p90_score": 0.15450462698936462,
+        "mean_entropy": 0.2588226795196533,
+        "baseline_alarm_rate": 0.032362459546925564,
+        "fusion_alarm_rate": 0.006472491909385114
+      },
+      {
+        "class": "deteriorate",
+        "hours": 180,
+        "mean_score": 0.32497143745422363,
+        "p50_score": 0.033247873187065125,
+        "p90_score": 0.997649610042572,
+        "mean_entropy": 0.27985355257987976,
+        "baseline_alarm_rate": 0.2777777777777778,
+        "fusion_alarm_rate": 0.2
+      }
+    ]
+  },
+  "serving": {
+    "device": "cpu",
+    "threads": 1,
+    "arrival": "simultaneous_burst",
+    "latency_definition": "completion_minus_common_arrival",
+    "sla_rule": "p99_ms < sla_ms",
+    "rows": [
+      {
+        "p50_ms": 93.12490001320839,
+        "p95_ms": 179.9794900143752,
+        "p99_ms": 188.68437398516107,
+        "mean_ms": 95.79791750141885,
+        "max_ms": 190.33070001751184,
+        "mode": "sequential",
+        "max_batch": 1,
+        "beds": 1000,
+        "wall_ms": 190.3347999905236,
+        "throughput_beds_per_sec": 5253.899970209273,
+        "sla_ms": 50.0,
+        "sla_met": false
+      },
+      {
+        "p50_ms": 2.194400003645569,
+        "p95_ms": 6.103599967900664,
+        "p99_ms": 6.103599967900664,
+        "mean_ms": 2.7020639800466597,
+        "max_ms": 6.103599967900664,
+        "mode": "microbatch",
+        "max_batch": 128,
+        "beds": 1000,
+        "wall_ms": 6.113199982792139,
+        "throughput_beds_per_sec": 163580.4493252093,
+        "sla_ms": 50.0,
+        "sla_met": true
+      }
+    ]
+  },
+  "targets": {
+    "imputation_order": true,
+    "decay_reflection": true,
+    "false_alarm_reduction": true,
+    "precision_defense": true,
+    "serving_p99": true,
+    "serving_throughput": true
+  }
+}
