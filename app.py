@@ -17,20 +17,7 @@ REPORT_PATH = ROOT / "results" / "benchmark_report.json"
 DASHBOARD_PATH = ROOT / "results" / "dashboard.npz"
 
 st.set_page_config(page_title="Vital Stream Triage", layout="wide")
-
-
-def _font() -> None:
-    from matplotlib import font_manager
-
-    installed = {font.name for font in font_manager.fontManager.ttflist}
-    for name in ("Malgun Gothic", "맑은 고딕"):
-        if name in installed:
-            plt.rcParams["font.family"] = name
-            break
-    plt.rcParams["axes.unicode_minus"] = False
-
-
-_font()
+plt.rcParams["axes.unicode_minus"] = False
 
 
 @st.cache_resource
@@ -63,14 +50,14 @@ def _plot_series(board: dict, patient: int, key: str) -> plt.Figure:
     hours = np.arange(board["values"].shape[1])
     observed = board["observed"][patient, :, index]
     figure, axis = plt.subplots(figsize=(8.2, 3.4))
-    axis.plot(hours, board["values"][patient, :, index], color="#111827", linewidth=1.6, label="잠재값")
-    axis.plot(hours, board["imp_zero"][patient, :, index], color="#9ca3af", linewidth=1.1, label="zero-fill")
-    axis.plot(hours, board["imp_forward"][patient, :, index], color="#d97706", linewidth=1.2, label="forward-fill")
-    axis.plot(hours, board["imp_time_decay"][patient, :, index], color="#0f766e", linewidth=1.6, label="time-decay")
+    axis.plot(hours, board["values"][patient, :, index], color="#111827", linewidth=1.6, label="Latent")
+    axis.plot(hours, board["imp_zero"][patient, :, index], color="#9ca3af", linewidth=1.1, label="Zero-fill")
+    axis.plot(hours, board["imp_forward"][patient, :, index], color="#d97706", linewidth=1.2, label="Forward-fill")
+    axis.plot(hours, board["imp_time_decay"][patient, :, index], color="#0f766e", linewidth=1.6, label="Time-decay")
     charted = np.isfinite(observed)
-    axis.scatter(hours[charted], observed[charted], color="#111827", s=28, zorder=4, label="기록")
-    axis.set_ylabel(f"{feature.korean} ({feature.unit})")
-    axis.set_xlabel("시간")
+    axis.scatter(hours[charted], observed[charted], color="#111827", s=28, zorder=4, label="Charted")
+    axis.set_ylabel(f"{feature.label} ({feature.unit})")
+    axis.set_xlabel("Hour")
     axis.legend(loc="upper right", fontsize=8, ncol=2)
     figure.tight_layout()
     return figure
@@ -81,17 +68,17 @@ def _plot_alarms(board: dict, patient: int, score_threshold: float, entropy_thre
     score, entropy, baseline, fusion = alarm_masks(probs[None, ...], score_threshold, entropy_threshold)
     hours = board["hour_index"]
     figure, axis = plt.subplots(figsize=(8.2, 3.4))
-    axis.plot(hours, score[0], color="#1d4ed8", linewidth=1.6, label="악화 점수")
-    axis.plot(hours, entropy[0], color="#7c3aed", linewidth=1.2, label="엔트로피 (nat)")
+    axis.plot(hours, score[0], color="#1d4ed8", linewidth=1.6, label="Deterioration score")
+    axis.plot(hours, entropy[0], color="#7c3aed", linewidth=1.2, label="Entropy (nat)")
     axis.axhline(score_threshold, color="#1d4ed8", linestyle="--", linewidth=0.8)
     axis.axhline(entropy_threshold, color="#7c3aed", linestyle="--", linewidth=0.8)
-    axis.scatter(hours[baseline[0]], np.full(int(baseline[0].sum()), -0.05), marker="|", s=80, color="#d97706", label="기준 알람")
-    axis.scatter(hours[fusion[0]], np.full(int(fusion[0].sum()), -0.12), marker="|", s=80, color="#be123c", label="융합 알람")
+    axis.scatter(hours[baseline[0]], np.full(int(baseline[0].sum()), -0.05), marker="|", s=80, color="#d97706", label="Baseline alarm")
+    axis.scatter(hours[fusion[0]], np.full(int(fusion[0].sum()), -0.12), marker="|", s=80, color="#be123c", label="Fusion alarm")
     event = int(board["event_time"][patient])
     if event >= 0:
-        axis.axvspan(event - 6, event, color="#fecdd3", alpha=0.45, label="악화 구간")
+        axis.axvspan(event - 6, event, color="#fecdd3", alpha=0.45, label="Deterioration window")
     axis.set_ylim(-0.2, 1.05)
-    axis.set_xlabel("시간")
+    axis.set_xlabel("Hour")
     axis.legend(loc="upper right", fontsize=8, ncol=2)
     figure.tight_layout()
     return figure
@@ -99,46 +86,65 @@ def _plot_alarms(board: dict, patient: int, score_threshold: float, entropy_thre
 
 def main() -> None:
     st.title("Vital Stream Triage")
-    st.caption(
-        "합성 EMR 시계열이다. 임상 판단에 쓰지 않는다. "
-        "19개 항목의 구성만 바이탈케어형 병동 기록을 닮았을 뿐, 그 제품의 모델이나 성적을 재현하지 않는다."
-    )
+    st.caption("Synthetic hourly ward stream. Not for clinical use. The board replays the saved benchmark cohort.")
     loaded = load_board()
     if loaded is None:
-        st.warning("결과 파일이 없다. 저장소 루트에서 `python -m vital_triage.runner --synthetic` 를 먼저 실행한다.")
+        st.warning("No result files. From the repository root, run `python -m vital_triage.runner --synthetic` first.")
         return
     report, board = loaded
     targets = report["targets"]
     left, middle, right = st.columns(3)
-    left.metric("Exp 1 · time-decay 표준화 MSE", _metric_value(report, "mse"))
-    middle.metric("Exp 2 · 위양성 감소", _metric_value(report, "fa"), f"목표 35% {'충족' if targets['false_alarm_reduction'] else '미충족'}")
-    right.metric("Exp 3 · 마이크로배치 P99", _metric_value(report, "p99"), f"목표 50 ms {'충족' if targets['serving_p99'] else '미충족'}")
+    left.metric("Time-decay standardized MSE", _metric_value(report, "mse"))
+    middle.metric(
+        "False-alarm reduction",
+        _metric_value(report, "fa"),
+        f"35% target {'met' if targets['false_alarm_reduction'] else 'not met'}",
+    )
+    right.metric(
+        "Micro-batch P99",
+        _metric_value(report, "p99"),
+        f"50 ms target {'met' if targets['serving_p99'] else 'not met'}",
+    )
     st.caption(
-        f"결측 순서 {'충족' if targets['imputation_order'] else '미충족'} · "
-        f"정밀도 방어 {'충족' if targets['precision_defense'] else '미충족'} · "
-        f"검증 환자 {report['cohort']['test_patients']}명 · 시드 {report['seed']}"
+        f"Imputation order {'met' if targets['imputation_order'] else 'not met'} · "
+        f"precision ratio {'met' if targets['precision_defense'] else 'not met'} · "
+        f"{report['cohort']['test_patients']} held-out patients · seed {report['seed']}"
     )
 
     n_patients = int(board["probs"].shape[0])
-    labels = [f"병상 {index + 1:03d}" for index in range(n_patients)]
+    labels = [f"Bed {index + 1:03d}" for index in range(n_patients)]
     event_patients = [index for index in range(n_patients) if int(board["event_time"][index]) >= 0]
     default_index = event_patients[0] if event_patients else 0
-    patient = st.selectbox("검증 병상", options=list(range(n_patients)), index=default_index, format_func=lambda index: labels[index])
-    kind = {0: "없음", 1: "맥박·호흡 스파이크", 2: "악화와 비슷한 일과성"}[int(board["transient_kind"][patient])]
+    patient = st.selectbox(
+        "Held-out bed",
+        options=list(range(n_patients)),
+        index=default_index,
+        format_func=lambda index: labels[index],
+    )
+    kind = {
+        0: "none",
+        1: "heart-rate and respiratory spike",
+        2: "deterioration-like transient",
+    }[int(board["transient_kind"][patient])]
     event = int(board["event_time"][patient])
-    event_text = "없음" if event < 0 else f"{event}시"
+    event_text = "none" if event < 0 else f"hour {event}"
     st.caption(
-        f"나이 {board['age'][patient]:.0f}세 · GCS {board['gcs'][patient]:.0f} · "
-        f"악화 시각 {event_text} · 일과성 {kind}"
+        f"Age {board['age'][patient]:.0f} · GCS {board['gcs'][patient]:.0f} · "
+        f"deterioration {event_text} · transient {kind}"
     )
 
-    feature_labels = {feature.key: f"{feature.korean} ({feature.key})" for feature in FEATURES}
-    chosen = st.selectbox("복원 곡선", options=[feature.key for feature in FEATURES], index=feature_index("lactate"), format_func=lambda key: feature_labels[key])
+    feature_labels = {feature.key: f"{feature.label} ({feature.key})" for feature in FEATURES}
+    chosen = st.selectbox(
+        "Imputation series",
+        options=[feature.key for feature in FEATURES],
+        index=feature_index("lactate"),
+        format_func=lambda key: feature_labels[key],
+    )
     score_threshold, entropy_threshold = st.columns(2)
     with score_threshold:
-        score_cut = st.slider("악화 점수 컷", 0.50, 0.99, SCORE_THRESHOLD, 0.01)
+        score_cut = st.slider("Deterioration score cut", 0.50, 0.99, SCORE_THRESHOLD, 0.01)
     with entropy_threshold:
-        entropy_cut = st.slider("엔트로피 컷 (nat)", 0.05, 1.00, ENTROPY_THRESHOLD, 0.01)
+        entropy_cut = st.slider("Entropy cut (nat)", 0.05, 1.00, ENTROPY_THRESHOLD, 0.01)
 
     chart_left, chart_right = st.columns(2)
     with chart_left:
@@ -154,21 +160,22 @@ def main() -> None:
         entropy_threshold=entropy_cut,
     )
     official = score_cut == SCORE_THRESHOLD and abs(entropy_cut - ENTROPY_THRESHOLD) < 1e-9
-    st.subheader("검증 세트 알람" + (" · 공식 컷" if official else " · 슬라이더 컷"))
+    st.subheader("Held-out alarms" + (" · recorded cuts" if official else " · slider cuts"))
     one, two, three, four = st.columns(4)
-    one.metric("기준 위양성", live["baseline"]["fp"])
-    two.metric("융합 위양성", live["fusion"]["fp"])
-    three.metric("융합 정밀도", "n/a" if live["fusion"]["precision"] is None else f"{live['fusion']['precision']:.3f}")
-    four.metric("융합 재현율", "n/a" if live["fusion"]["recall"] is None else f"{live['fusion']['recall']:.3f}")
+    one.metric("Baseline false positives", live["baseline"]["fp"])
+    two.metric("Fusion false positives", live["fusion"]["fp"])
+    three.metric("Fusion precision", "n/a" if live["fusion"]["precision"] is None else f"{live['fusion']['precision']:.3f}")
+    four.metric("Fusion recall", "n/a" if live["fusion"]["recall"] is None else f"{live['fusion']['recall']:.3f}")
 
     decay = next(row for row in report["imputation"]["methods"] if row["method"] == "time_decay")
     forward = {row["name"]: row for row in next(row for row in report["imputation"]["methods"] if row["method"] == "forward")["per_feature"]}
     zero = {row["name"]: row for row in next(row for row in report["imputation"]["methods"] if row["method"] == "zero")["per_feature"]}
-    st.subheader("검사별 표준화 MSE")
-    st.dataframe(
+    labels_by_key = {feature.key: feature.label for feature in FEATURES}
+    st.subheader("Lab standardized MSE")
+    st.table(
         [
             {
-                "검사": row["korean"],
+                "Analyte": labels_by_key.get(row["name"], row["name"]),
                 "zero": round(zero[row["name"]]["standardized_mse"], 3),
                 "forward": round(forward[row["name"]]["standardized_mse"], 3),
                 "time-decay": round(row["standardized_mse"], 3),

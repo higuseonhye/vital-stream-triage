@@ -148,7 +148,7 @@ def score_imputation(cohort: Cohort, method: str) -> dict:
         per_feature.append(
             {
                 "name": feature.key,
-                "korean": feature.korean,
+                "label": feature.label,
                 "mse": raw_mse,
                 "standardized_mse": standardized_mse,
                 "decay_reflection": reflection,

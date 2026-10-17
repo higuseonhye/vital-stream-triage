@@ -1,69 +1,69 @@
 # Vital stream triage — benchmark results
 
-합성 시간별 EMR이다. 병원 기록, 에이아이트릭스 바이탈케어, 뷰노 모델을 읽거나 재현하지 않는다. 수치는 이 파일과 함께 저장된 한 번의 CPU 실행이다.
+Synthetic hourly ward stream. This file is one CPU run of the repository, not a clinical-device measurement.
 
-- 환자 400명, 48시간 격자, 시드 0
-- 검증 환자 120명으로 알람을 센다. 결측 복원 오차는 코호트 전체의 검사 공백이다.
-- 혈액검사 결측률 95.8%. 평가는 첫 채혈 이후의 빈 칸만 쓴다.
+- 400 patients, 48-hour grid, seed 0
+- Alarms are counted on 120 held-out patients. Imputation error uses every lab gap in the cohort.
+- Lab missingness 95.8%. Scoring uses gaps after the first draw only.
 
-## Exp 1. 결측치 복원
+## 1. Imputation
 
-표준화 MSE는 잠재 궤적 대비 오차를 그 검사의 정상 표준편차로 나눈 제곱의 평균이다. 감쇄 반영도는 마지막 측정과의 거리와 경과 시간의 피어슨 상관이다. Forward-fill은 거리를 0으로 두므로 상관이 0이다.
+Standardized MSE is the mean squared error against the latent trajectory, divided by that analyte's population variance. Decay reflection is the Pearson correlation between hours since the last draw and distance from that draw. Forward-fill keeps the distance at zero, so the correlation is zero.
 
-| 검사 | key | zero | forward | time-decay | time-decay 감쇄 상관 |
+| Analyte | key | zero | forward | time-decay | decay correlation |
 | --- | --- | --- | --- | --- | --- |
-| 백혈구 | wbc | 26.660 | 0.885 | 0.682 | 0.500 |
-| 헤모글로빈 | hb | 98.044 | 0.307 | 0.279 | 0.529 |
-| 헤마토크릿 | hct | 118.596 | 0.312 | 0.282 | 0.515 |
-| 혈소판 | platelet | 33.302 | 0.450 | 0.375 | 0.528 |
-| 빌리루빈 | bilirubin | 11.498 | 0.461 | 0.399 | 0.520 |
-| 크레아티닌 | creatinine | 26.394 | 0.914 | 0.725 | 0.506 |
+| WBC | wbc | 26.660 | 0.885 | 0.682 | 0.500 |
+| Hemoglobin | hb | 98.044 | 0.307 | 0.279 | 0.529 |
+| Hematocrit | hct | 118.596 | 0.312 | 0.282 | 0.515 |
+| Platelet | platelet | 33.302 | 0.450 | 0.375 | 0.528 |
+| Bilirubin | bilirubin | 11.498 | 0.461 | 0.399 | 0.520 |
+| Creatinine | creatinine | 26.394 | 0.914 | 0.725 | 0.506 |
 | BUN | bun | 23.176 | 0.676 | 0.575 | 0.513 |
 | CRP | crp | 6.211 | 0.873 | 0.789 | 0.513 |
-| 젖산 | lactate | 19.858 | 2.807 | 2.486 | 0.305 |
-| 나트륨 | sodium | 3989.082 | 0.702 | 0.555 | 0.491 |
-| 칼륨 | potassium | 189.940 | 1.181 | 0.802 | 0.420 |
-| 11종 평균 | macro | 412.978 | 0.870 | 0.723 | 0.485 |
+| Lactate | lactate | 19.858 | 2.807 | 2.486 | 0.305 |
+| Sodium | sodium | 3989.082 | 0.702 | 0.555 | 0.491 |
+| Potassium | potassium | 189.940 | 1.181 | 0.802 | 0.420 |
+| 11-lab mean | macro | 412.978 | 0.870 | 0.723 | 0.485 |
 
-순서 목표(time-decay < forward < zero): 충족.
-감쇄 상관 목표(time-decay > forward): 충족.
-젖산 표준화 MSE는 zero 19.858, forward 2.807, time-decay 2.486.
+Order target (time-decay < forward < zero): met.
+Decay-correlation target (time-decay > forward): met.
+Lactate standardized MSE is zero 19.858, forward 2.807, time-decay 2.486.
 
-## Exp 2. 알람 피로
+## 2. Alarm policy
 
-베이스라인은 악화 클래스 소프트맥스 > 0.7. 융합 규칙은 여기에 3-class 엔트로피 < 0.3 nat를 더한다. 이 엔트로피는 그 소프트맥스 분포의 엔트로피라서, 0.3 nat 아래는 최대 확률이 대략 0.93 이상인 뾰족한 분포만 통과한다.
+The baseline fires when the deteriorate-class softmax exceeds 0.7. The fusion rule also requires 3-class entropy below 0.3 nats. That entropy is the entropy of the same softmax, so values under 0.3 nats occur only when the largest probability is about 0.93 or higher.
 
-| 클래스 | 시간 | 평균 점수 | 점수 P90 | 평균 엔트로피 | 기준 알람 | 융합 알람 |
+| Class | Hours | Mean score | Score P90 | Mean entropy | Baseline alarms | Fusion alarms |
 | --- | --- | --- | --- | --- | --- | --- |
 | stable | 4391 | 0.035 | 0.030 | 0.194 | 1.9% | 0.8% |
 | transient | 309 | 0.062 | 0.155 | 0.259 | 3.2% | 0.6% |
 | deteriorate | 180 | 0.325 | 0.998 | 0.280 | 27.8% | 20.0% |
 
-| 규칙 | TP | FP | FN | 정밀도 | 재현율 |
+| Rule | TP | FP | FN | Precision | Recall |
 | --- | --- | --- | --- | --- | --- |
 | softmax > 0.7 | 50 | 92 | 130 | 0.352 | 0.278 |
 | softmax > 0.7 and H < 0.3 | 36 | 39 | 144 | 0.480 | 0.200 |
 
-위양성 감소 57.6% (목표 35% 이상): 충족.
-정밀도 방어율 1.363 (융합 정밀도 / 기준 정밀도, 목표 1 이상): 충족.
-융합 알람 중 최저 악화 점수 0.928.
-재현율은 이 컷의 반대편이다. 융합 규칙이 재현율을 얼마나 깎는지는 위 표의 FN으로 본다.
+False-alarm reduction 57.6% (target at least 35%): met.
+Precision ratio 1.363 (fusion precision / baseline precision, target at least 1): met.
+Lowest deteriorate score among fusion alarms 0.928.
+Recall moves the other way. The false-negative column is the cost of the tighter rule.
 
-## Exp 3. 1,000병상 동시 유입
+## 3. Simultaneous 1,000-bed arrival
 
-병상 창이 같은 시각에 한 CPU 스레드 큐로 들어온다. 지연은 공통 도착 시각부터 그 요청의 배치가 끝날 때까지다. 순차 처리는 같은 큐의 max_batch=1이다.
+Every bed window arrives at one timestamp on a single CPU-thread queue. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.
 
-| 모드 | max batch | P50 ms | P95 ms | P99 ms | 병상/초 | P99 < 50 ms |
+| Mode | max batch | P50 ms | P95 ms | P99 ms | beds/s | P99 < 50 ms |
 | --- | --- | --- | --- | --- | --- | --- |
 | sequential | 1 | 93.12 | 179.98 | 188.68 | 5253.9 | no |
 | microbatch | 128 | 2.19 | 6.10 | 6.10 | 163580.4 | yes |
 
-마이크로배치 P99 6.10 ms: 충족.
-처리량 163580.4 vs 순차 5253.9 병상/초.
+Micro-batch P99 6.10 ms: met.
+Throughput 163580.4 versus sequential 5253.9 beds/s.
 
-## 이 실행이 아닌 것
+## Outside this run
 
-- 임상 장치 성능, 민감도 청구, 또는 특정 병원 경보 정책의 적합성 평가가 아니다.
-- 엔트로피 게이트는 인식적 불확실성(MC dropout, 앙상블)이 아니라 한 번의 소프트맥스 엔트로피다.
-- 1초 모니터 파형이 아니다. 격자는 병동 EMR처럼 1시간이다.
+- Not a clinical-device claim, a sensitivity filing, or a fit assessment for a hospital alarm policy.
+- The entropy gate is one softmax entropy, not epistemic uncertainty from MC dropout or an ensemble.
+- Not a 1 Hz monitor waveform. The grid is hourly, as in a ward chart.
 

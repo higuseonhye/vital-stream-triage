@@ -1,13 +1,9 @@
-"""Synthetic hourly EMR stream for 19 VitalCare-style variables.
+"""Synthetic hourly ward stream with 19 channels.
 
 Six vitals are charted almost every hour. Eleven labs share two blood-panel
 draws per 48 h, so each lab is missing on more than 90% of the grid. Age and
 GCS are static. Latent labs are an Ornstein-Uhlenbeck process around a
 population mean; that is the world time-decay imputation is built for.
-
-Nothing here is an AITRICS or VUNO export. The four labs that complete the
-eleven (hematocrit, BUN, sodium, potassium) are routine chemistries, not a
-claim about a vendor feature contract.
 """
 
 from __future__ import annotations
@@ -28,7 +24,7 @@ MIMIC_FRACTION = 0.70
 @dataclass(frozen=True)
 class Feature:
     key: str
-    korean: str
+    label: str
     group: str
     unit: str
     mu: float
@@ -43,23 +39,23 @@ class Feature:
 
 
 FEATURES: tuple[Feature, ...] = (
-    Feature("sbp", "수축기 혈압", "vital", "mmHg", 122.0, 10.0, 3.0, 70.0, 210.0, -34.0, -22.0, 0.0, 0.10),
-    Feature("dbp", "이완기 혈압", "vital", "mmHg", 74.0, 8.0, 3.0, 40.0, 130.0, -16.0, -10.0, 0.0, 0.10),
-    Feature("hr", "맥박", "vital", "bpm", 82.0, 8.0, 2.0, 35.0, 180.0, 38.0, 26.0, 30.0, 0.10),
-    Feature("rr", "호흡수", "vital", "/min", 16.0, 2.0, 2.0, 8.0, 44.0, 9.0, 6.0, 7.0, 0.10),
-    Feature("bt", "체온", "vital", "°C", 36.7, 0.25, 8.0, 34.5, 41.0, 1.25, 0.55, 0.0, 0.10),
-    Feature("spo2", "산소포화도", "vital", "%", 97.2, 1.1, 2.0, 78.0, 100.0, -5.5, -2.8, -0.3, 0.08),
-    Feature("wbc", "백혈구", "lab", "10^3/µL", 8.0, 1.6, 24.0, 1.0, 40.0, 6.0, 0.0, 0.0, 0.20),
-    Feature("hb", "헤모글로빈", "lab", "g/dL", 12.8, 1.3, 72.0, 6.0, 18.0, -1.4, 0.0, 0.0, 0.15),
-    Feature("hct", "헤마토크릿", "lab", "%", 38.0, 3.5, 72.0, 18.0, 55.0, -4.0, 0.0, 0.0, 0.15),
-    Feature("platelet", "혈소판", "lab", "10^3/µL", 230.0, 40.0, 48.0, 20.0, 700.0, -80.0, 0.0, 0.0, 0.15),
-    Feature("bilirubin", "빌리루빈", "lab", "mg/dL", 0.70, 0.22, 48.0, 0.10, 12.0, 0.80, 0.0, 0.0, 0.20),
-    Feature("creatinine", "크레아티닌", "lab", "mg/dL", 0.90, 0.18, 18.0, 0.30, 8.0, 0.70, 0.0, 0.0, 0.20),
+    Feature("sbp", "Systolic BP", "vital", "mmHg", 122.0, 10.0, 3.0, 70.0, 210.0, -34.0, -22.0, 0.0, 0.10),
+    Feature("dbp", "Diastolic BP", "vital", "mmHg", 74.0, 8.0, 3.0, 40.0, 130.0, -16.0, -10.0, 0.0, 0.10),
+    Feature("hr", "Heart rate", "vital", "bpm", 82.0, 8.0, 2.0, 35.0, 180.0, 38.0, 26.0, 30.0, 0.10),
+    Feature("rr", "Respiratory rate", "vital", "/min", 16.0, 2.0, 2.0, 8.0, 44.0, 9.0, 6.0, 7.0, 0.10),
+    Feature("bt", "Temperature", "vital", "°C", 36.7, 0.25, 8.0, 34.5, 41.0, 1.25, 0.55, 0.0, 0.10),
+    Feature("spo2", "SpO2", "vital", "%", 97.2, 1.1, 2.0, 78.0, 100.0, -5.5, -2.8, -0.3, 0.08),
+    Feature("wbc", "WBC", "lab", "10^3/µL", 8.0, 1.6, 24.0, 1.0, 40.0, 6.0, 0.0, 0.0, 0.20),
+    Feature("hb", "Hemoglobin", "lab", "g/dL", 12.8, 1.3, 72.0, 6.0, 18.0, -1.4, 0.0, 0.0, 0.15),
+    Feature("hct", "Hematocrit", "lab", "%", 38.0, 3.5, 72.0, 18.0, 55.0, -4.0, 0.0, 0.0, 0.15),
+    Feature("platelet", "Platelet", "lab", "10^3/µL", 230.0, 40.0, 48.0, 20.0, 700.0, -80.0, 0.0, 0.0, 0.15),
+    Feature("bilirubin", "Bilirubin", "lab", "mg/dL", 0.70, 0.22, 48.0, 0.10, 12.0, 0.80, 0.0, 0.0, 0.20),
+    Feature("creatinine", "Creatinine", "lab", "mg/dL", 0.90, 0.18, 18.0, 0.30, 8.0, 0.70, 0.0, 0.0, 0.20),
     Feature("bun", "BUN", "lab", "mg/dL", 16.0, 3.5, 24.0, 4.0, 80.0, 12.0, 0.0, 0.0, 0.20),
     Feature("crp", "CRP", "lab", "mg/dL", 1.10, 0.55, 36.0, 0.05, 30.0, 7.0, 0.0, 0.0, 0.20),
-    Feature("lactate", "젖산", "lab", "mmol/L", 1.15, 0.30, 6.0, 0.30, 12.0, 2.40, 0.0, 0.0, 0.25),
-    Feature("sodium", "나트륨", "lab", "mEq/L", 139.0, 2.2, 24.0, 125.0, 155.0, -4.0, 0.0, 0.0, 0.15),
-    Feature("potassium", "칼륨", "lab", "mEq/L", 4.10, 0.30, 12.0, 2.6, 6.5, 0.55, 0.0, 0.0, 0.20),
+    Feature("lactate", "Lactate", "lab", "mmol/L", 1.15, 0.30, 6.0, 0.30, 12.0, 2.40, 0.0, 0.0, 0.25),
+    Feature("sodium", "Sodium", "lab", "mEq/L", 139.0, 2.2, 24.0, 125.0, 155.0, -4.0, 0.0, 0.0, 0.15),
+    Feature("potassium", "Potassium", "lab", "mEq/L", 4.10, 0.30, 12.0, 2.6, 6.5, 0.55, 0.0, 0.0, 0.20),
 )
 
 FEATURE_INDEX = {feature.key: index for index, feature in enumerate(FEATURES)}

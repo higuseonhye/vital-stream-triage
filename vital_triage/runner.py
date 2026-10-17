@@ -70,7 +70,7 @@ def render_markdown(report: dict) -> str:
     for row in decay["per_feature"]:
         feature_rows.append(
             [
-                row["korean"],
+                row.get("label", row["name"]),
                 row["name"],
                 _num(zero_by_name[row["name"]]["standardized_mse"], 3),
                 _num(forward_by_name[row["name"]]["standardized_mse"], 3),
@@ -80,7 +80,7 @@ def render_markdown(report: dict) -> str:
         )
     feature_rows.append(
         [
-            "11종 평균",
+            "11-lab mean",
             "macro",
             _num(zero["standardized_mse"], 3),
             _num(forward["standardized_mse"], 3),
@@ -116,40 +116,40 @@ def render_markdown(report: dict) -> str:
     lines = [
         "# Vital stream triage — benchmark results",
         "",
-        "합성 시간별 EMR이다. 병원 기록, 에이아이트릭스 바이탈케어, 뷰노 모델을 읽거나 재현하지 않는다. 수치는 이 파일과 함께 저장된 한 번의 CPU 실행이다.",
+        "Synthetic hourly ward stream. This file is one CPU run of the repository, not a clinical-device measurement.",
         "",
-        f"- 환자 {report['cohort']['patients']}명, {report['cohort']['hours']}시간 격자, 시드 {report['seed']}",
-        f"- 검증 환자 {report['cohort']['test_patients']}명으로 알람을 센다. 결측 복원 오차는 코호트 전체의 검사 공백이다.",
-        f"- 혈액검사 결측률 {100.0 * report['imputation']['lab_missing_rate']:.1f}%. 평가는 첫 채혈 이후의 빈 칸만 쓴다.",
+        f"- {report['cohort']['patients']} patients, {report['cohort']['hours']}-hour grid, seed {report['seed']}",
+        f"- Alarms are counted on {report['cohort']['test_patients']} held-out patients. Imputation error uses every lab gap in the cohort.",
+        f"- Lab missingness {100.0 * report['imputation']['lab_missing_rate']:.1f}%. Scoring uses gaps after the first draw only.",
         "",
-        "## Exp 1. 결측치 복원",
+        "## 1. Imputation",
         "",
-        "표준화 MSE는 잠재 궤적 대비 오차를 그 검사의 정상 표준편차로 나눈 제곱의 평균이다. 감쇄 반영도는 마지막 측정과의 거리와 경과 시간의 피어슨 상관이다. Forward-fill은 거리를 0으로 두므로 상관이 0이다.",
+        "Standardized MSE is the mean squared error against the latent trajectory, divided by that analyte's population variance. Decay reflection is the Pearson correlation between hours since the last draw and distance from that draw. Forward-fill keeps the distance at zero, so the correlation is zero.",
         "",
         _md_table(
-            ["검사", "key", "zero", "forward", "time-decay", "time-decay 감쇄 상관"],
+            ["Analyte", "key", "zero", "forward", "time-decay", "decay correlation"],
             feature_rows,
         ),
         "",
-        f"순서 목표(time-decay < forward < zero): {'충족' if targets['imputation_order'] else '미충족'}.",
-        f"감쇄 상관 목표(time-decay > forward): {'충족' if targets['decay_reflection'] else '미충족'}.",
+        f"Order target (time-decay < forward < zero): {'met' if targets['imputation_order'] else 'not met'}.",
+        f"Decay-correlation target (time-decay > forward): {'met' if targets['decay_reflection'] else 'not met'}.",
         (
-            f"젖산 표준화 MSE는 zero {_num(zero_by_name['lactate']['standardized_mse'], 3)}, "
+            f"Lactate standardized MSE is zero {_num(zero_by_name['lactate']['standardized_mse'], 3)}, "
             f"forward {_num(forward_by_name['lactate']['standardized_mse'], 3)}, "
             f"time-decay {_num(next(row['standardized_mse'] for row in decay['per_feature'] if row['name']=='lactate'), 3)}."
         ),
         "",
-        "## Exp 2. 알람 피로",
+        "## 2. Alarm policy",
         "",
-        "베이스라인은 악화 클래스 소프트맥스 > 0.7. 융합 규칙은 여기에 3-class 엔트로피 < 0.3 nat를 더한다. 이 엔트로피는 그 소프트맥스 분포의 엔트로피라서, 0.3 nat 아래는 최대 확률이 대략 0.93 이상인 뾰족한 분포만 통과한다.",
+        "The baseline fires when the deteriorate-class softmax exceeds 0.7. The fusion rule also requires 3-class entropy below 0.3 nats. That entropy is the entropy of the same softmax, so values under 0.3 nats occur only when the largest probability is about 0.93 or higher.",
         "",
         _md_table(
-            ["클래스", "시간", "평균 점수", "점수 P90", "평균 엔트로피", "기준 알람", "융합 알람"],
+            ["Class", "Hours", "Mean score", "Score P90", "Mean entropy", "Baseline alarms", "Fusion alarms"],
             class_rows,
         ),
         "",
         _md_table(
-            ["규칙", "TP", "FP", "FN", "정밀도", "재현율"],
+            ["Rule", "TP", "FP", "FN", "Precision", "Recall"],
             [
                 [
                     "softmax > 0.7",
@@ -170,28 +170,28 @@ def render_markdown(report: dict) -> str:
             ],
         ),
         "",
-        f"위양성 감소 {_pct(alarms['false_alarm_reduction'])} (목표 35% 이상): {'충족' if targets['false_alarm_reduction'] else '미충족'}.",
-        f"정밀도 방어율 {_num(alarms['precision_defense'], 3)} (융합 정밀도 / 기준 정밀도, 목표 1 이상): {'충족' if targets['precision_defense'] else '미충족'}.",
-        f"융합 알람 중 최저 악화 점수 {_num(alarms['min_score_among_fusion_alarms'], 3)}.",
-        "재현율은 이 컷의 반대편이다. 융합 규칙이 재현율을 얼마나 깎는지는 위 표의 FN으로 본다.",
+        f"False-alarm reduction {_pct(alarms['false_alarm_reduction'])} (target at least 35%): {'met' if targets['false_alarm_reduction'] else 'not met'}.",
+        f"Precision ratio {_num(alarms['precision_defense'], 3)} (fusion precision / baseline precision, target at least 1): {'met' if targets['precision_defense'] else 'not met'}.",
+        f"Lowest deteriorate score among fusion alarms {_num(alarms['min_score_among_fusion_alarms'], 3)}.",
+        "Recall moves the other way. The false-negative column is the cost of the tighter rule.",
         "",
-        "## Exp 3. 1,000병상 동시 유입",
+        "## 3. Simultaneous 1,000-bed arrival",
         "",
-        "병상 창이 같은 시각에 한 CPU 스레드 큐로 들어온다. 지연은 공통 도착 시각부터 그 요청의 배치가 끝날 때까지다. 순차 처리는 같은 큐의 max_batch=1이다.",
+        "Every bed window arrives at one timestamp on a single CPU-thread queue. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.",
         "",
         _md_table(
-            ["모드", "max batch", "P50 ms", "P95 ms", "P99 ms", "병상/초", f"P99 < {serving['microbatch']['sla_ms']:.0f} ms"],
+            ["Mode", "max batch", "P50 ms", "P95 ms", "P99 ms", "beds/s", f"P99 < {serving['microbatch']['sla_ms']:.0f} ms"],
             serve_rows,
         ),
         "",
-        f"마이크로배치 P99 {_num(serving['microbatch']['p99_ms'], 2)} ms: {'충족' if targets['serving_p99'] else '미충족'}.",
-        f"처리량 {serving['microbatch']['throughput_beds_per_sec']:.1f} vs 순차 {serving['sequential']['throughput_beds_per_sec']:.1f} 병상/초.",
+        f"Micro-batch P99 {_num(serving['microbatch']['p99_ms'], 2)} ms: {'met' if targets['serving_p99'] else 'not met'}.",
+        f"Throughput {serving['microbatch']['throughput_beds_per_sec']:.1f} versus sequential {serving['sequential']['throughput_beds_per_sec']:.1f} beds/s.",
         "",
-        "## 이 실행이 아닌 것",
+        "## Outside this run",
         "",
-        "- 임상 장치 성능, 민감도 청구, 또는 특정 병원 경보 정책의 적합성 평가가 아니다.",
-        "- 엔트로피 게이트는 인식적 불확실성(MC dropout, 앙상블)이 아니라 한 번의 소프트맥스 엔트로피다.",
-        "- 1초 모니터 파형이 아니다. 격자는 병동 EMR처럼 1시간이다.",
+        "- Not a clinical-device claim, a sensitivity filing, or a fit assessment for a hospital alarm policy.",
+        "- The entropy gate is one softmax entropy, not epistemic uncertainty from MC dropout or an ensemble.",
+        "- Not a 1 Hz monitor waveform. The grid is hourly, as in a ward chart.",
         "",
     ]
     return "\n".join(lines) + "\n"
