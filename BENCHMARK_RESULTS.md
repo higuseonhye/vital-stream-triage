@@ -51,7 +51,7 @@ Recall moves the other way. The false-negative column is the cost of the tighter
 
 ## 3. Simultaneous 1,000-bed arrival
 
-Every bed window arrives at one timestamp on a single CPU-thread queue. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.
+Every bed window arrives at one timestamp on a single CPU-thread queue. One window has shape (28, 6), with a separate static vector of length 2. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.
 
 | Mode | max batch | P50 ms | P95 ms | P99 ms | beds/s | P99 < 50 ms |
 | --- | --- | --- | --- | --- | --- | --- |

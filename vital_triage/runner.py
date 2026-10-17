@@ -177,7 +177,7 @@ def render_markdown(report: dict) -> str:
         "",
         "## 3. Simultaneous 1,000-bed arrival",
         "",
-        "Every bed window arrives at one timestamp on a single CPU-thread queue. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.",
+        "Every bed window arrives at one timestamp on a single CPU-thread queue. One window has shape (28, 6), with a separate static vector of length 2. Latency is completion time minus that shared arrival. Sequential serving is the same queue with max batch 1.",
         "",
         _md_table(
             ["Mode", "max batch", "P50 ms", "P95 ms", "P99 ms", "beds/s", f"P99 < {serving['microbatch']['sla_ms']:.0f} ms"],

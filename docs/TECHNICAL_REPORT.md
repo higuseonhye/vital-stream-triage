@@ -4,9 +4,9 @@ Engineering record for one seed-0 run of `vital-stream-triage`. The cohort is sy
 
 ## 1. Scope
 
-400 patients, 48 hourly steps, seed 0. Six vitals are missing at 4% and are forward-filled inside the model input. Eleven labs share two scheduled panels, so lab missingness is 95.8%. Half of the patients who deteriorate also receive one lab draw inside the warning window. That is a generator schedule, not a model of a physician's decision to order a test.
+400 patients, 48 hourly steps, seed 0. Six vitals are present on 96% of hours. The other 4% are independent gaps, forward-filled inside the model input. The generator does not place nursing observations on a four-hour or eight-hour round. Eleven labs share two scheduled panels, so lab missingness is 95.8%. Half of the patients who deteriorate also receive one lab draw inside the warning window. That is a generator schedule, not a model of a physician's decision to order a test.
 
-Age and GCS are static. The head sees 17 dynamic channels plus 11 lab staleness channels (hours since the last draw, capped at 48), concatenated in `assemble_channels`.
+Age and GCS are static. The head sees 17 dynamic channels plus 11 lab staleness channels (hours since the last draw, capped at 48), concatenated in `assemble_channels`. One scored hour is a tensor of shape $(28, 6)$, the current hour and the five before it, plus a static vector of length 2. The labels on those hours are stable, transient, and deteriorate. A transient is a three-hour spike or a deterioration-like mimic, and it is not the positive alarm class.
 
 ## 2. Time-decay, and what GRU-D trains instead
 
@@ -58,7 +58,13 @@ $$
 H(p) = -\sum_{k=1}^{3} p_k \ln p_k
 $$
 
-is the entropy of that one softmax, in nats. $H < 0.3$ requires a maximum probability of about 0.93 or higher. It is not MC dropout and not an ensemble.
+is the entropy of that one softmax, in nats. $H < 0.3$ requires a maximum probability of about 0.93 or higher. A deteriorate probability of 0.75 is not enough: for $p = (0.10, 0.15, 0.75)$,
+
+$$
+H(p) \approx 0.73,
+$$
+
+which stays above the cut. It is not MC dropout and not an ensemble.
 
 | Rule | TP | FP | FN | Precision | Recall |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -75,7 +81,7 @@ Ovadia et al., NeurIPS 2019, show that softmax confidence is often overconfident
 
 ## 4. Serving
 
-`MicroBatchQueue` uses one worker. Latency is completion minus a common arrival. `torch.set_num_threads(1)` applies only during the serving measurement.
+`MicroBatchQueue` uses one worker. Latency is completion minus a common arrival. `torch.set_num_threads(1)` applies only during the serving measurement. Each forward takes `window` of shape `(batch, 28, 6)` and `static` of shape `(batch, 2)`. Batch 128 is 128 of those windows, not a tensor of shape `(128, 19, 48)`. The device is CPU.
 
 | Mode | Max batch | P99 | Throughput |
 | --- | ---: | ---: | ---: |

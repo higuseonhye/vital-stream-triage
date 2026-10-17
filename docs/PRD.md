@@ -21,7 +21,7 @@ Ward charts are hourly. Vitals are usually present. Labs arrive once or twice a 
 | Page | Deteriorate probability $> 0.7$ and $H(p) < 0.3$ nats |
 | Watchlist | Deteriorate probability $> 0.7$ and $H(p) \ge 0.3$ nats |
 | Silence | Deteriorate probability $\le 0.7$ |
-| Serving | 1,000 beds, one CPU thread, P99 $< 50$ ms |
+| Serving | 1,000 windows of shape $(28, 6)$ plus a static vector of length 2, one CPU thread, P99 $< 50$ ms |
 
 The deterioration label is the six hours before a synthetic event. It is not a cardiac-arrest code. Hours after the event are ignored in the alarm counts.
 

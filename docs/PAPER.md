@@ -14,7 +14,7 @@ Laboratory values in a chart are written at the time of the order, not every hou
 
 ### 2.1 Generator
 
-Dynamic channels are 6 vitals and 11 labs. Static channels are age and GCS. The latent state is an Ornstein–Uhlenbeck process with time constant $\tau$. During a deterioration the mean is pulled by a fixed shift. The probability of deterioration depends on age and GCS. This cohort has 86 events among 400 patients. The positive label at event time $t^\star$ is the half-open interval $[t^\star - 6, t^\star)$. Hours at and after $t^\star$ are ignored.
+Dynamic channels are 6 vitals and 11 labs. Static channels are age and GCS. Vitals are missing independently on 4% of hours. The latent state is an Ornstein–Uhlenbeck process with time constant $\tau$. During a deterioration the mean is pulled by a fixed shift. A transient is a separate three-hour spike, or a deterioration-like mimic that does not overlap the event window. The probability of deterioration depends on age and GCS. This cohort has 86 events among 400 patients. Class labels are stable, transient, and deteriorate. The positive label at event time $t^\star$ is the half-open interval $[t^\star - 6, t^\star)$. Hours at and after $t^\star$ are ignored.
 
 Each patient has two lab timestamps. For half of the patients who deteriorate, the second timestamp falls inside the positive interval. Vital missingness is an independent 4%. Observations add a small measurement noise. Error is scored against the latent trajectory, not against that noise.
 
@@ -30,7 +30,7 @@ $\tau$ matches the generator. Scored cells are missing hours after the first obs
 
 ### 2.3 Head and alarms
 
-The input is six hours of imputed channels, lab staleness, age, and GCS. The network is two 1D convolutions of width 32 and kernel 3, then a linear 3-class output. Training uses 70% of patients, 20 epochs, and AdamW. Hours after the event, and hours before the window is full, are ignored in the loss.
+The input at one hour is a window of shape $(28, 6)$, seventeen imputed channels plus eleven lab-staleness channels, and a static vector $(2,)$ for age and GCS. The 48-hour stay is sliced into those windows. It is not presented as shape $(19, 48)$. The network is two 1D convolutions of width 32 and kernel 3, then a linear map onto stable, transient, and deteriorate. Training uses 70% of patients, 20 epochs, and AdamW. Hours after the event, and hours before the window is full, are ignored in the loss.
 
 Alarms are counted on valid hours of held-out patients. The baseline is a deteriorate probability above 0.7. Fusion adds entropy below 0.3 nats:
 
@@ -40,7 +40,7 @@ $$
 
 ### 2.4 Serving
 
-The trained head is set to eval and intra-op threads are set to 1. One thousand windows enter one queue. Only `max_batch` changes, from 1 to 128. Latency is residence time from a shared arrival.
+The trained head is set to eval and intra-op threads are set to 1. The device is CPU. One thousand windows of shape $(28, 6)$ enter one queue, each with its length-2 static vector. Only `max_batch` changes, from 1 to 128. Latency is residence time from a shared arrival.
 
 ## 3. Results
 
@@ -50,7 +50,7 @@ Mean standardized MSE across 11 labs was 412.978, 0.870, and 0.723. Decay correl
 
 ### 3.2 Alarms
 
-On 180 deterioration hours the baseline rule has 50 true positives, 92 false positives, recall 0.278, and precision 0.352. Fusion has 36 true positives, 39 false positives, recall 0.200, and precision 0.480. False-alarm reduction is 57.6%. The lowest fusion score is 0.928, so the entropy condition demands a much larger probability mass than 0.7.
+On 180 deterioration hours the baseline rule has 50 true positives, 92 false positives, recall 0.278, and precision 0.352. Those 92 false positives are already the count at $s > 0.7$. Fusion has 36 true positives, 39 false positives, recall 0.200, and precision 0.480. False-alarm reduction is 57.6%. The lowest fusion score is 0.928. A distribution such as $(0.10, 0.15, 0.75)$ has $H(p) \approx 0.73$ nats, so it fires the baseline and fails the fusion rule.
 
 On 4,391 stable hours the baseline alarm rate is 1.9% and the fusion rate is 0.8%. On 309 transient hours the rate falls from 3.2% to 0.6%. Most false positives are the tail of stable hours, not the transient label.
 

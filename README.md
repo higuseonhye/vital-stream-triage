@@ -44,9 +44,19 @@ $$
 H(p) = -\sum_k p_k \ln p_k.
 $$
 
-$H < 0.3$ nats admits only a sharply peaked distribution, so it is a stricter confidence cut than a score of 0.7. It is not MC dropout.
+$H < 0.3$ nats admits only a sharply peaked distribution, so it is a stricter confidence cut than a score of 0.7. It is not MC dropout. The three classes are stable, transient, and deteriorate. A transient hour is a short heart-rate and respiratory spike, or a deterioration-like shift that ends before the event window. Only deteriorate is the positive label.
 
-The deterioration label covers the six hours before the event and stops at the event hour. Hours after the event are excluded from the alarm counts. Alarm metrics use the held-out 30% of patients.
+A deteriorate probability of 0.75 does not pass the fusion rule. For $p = (0.10, 0.15, 0.75)$,
+
+$$
+H(p) \approx 0.73
+$$
+
+nats, which is above 0.3. On the recorded run the lowest fusion score is 0.928.
+
+Each scored hour is a window of shape $(28, 6)$: 17 imputed channels and 11 lab-staleness channels, from that hour back five hours. Age and GCS are a separate vector of length 2. Micro-batch 128 is one forward of those windows on one CPU thread. The 48-hour stay is not packed as a tensor of shape $(19, 48)$.
+
+The deterioration label covers the six hours before the event and stops at the event hour. Hours after the event are excluded from the alarm counts. Alarm metrics use the held-out 30% of patients. Vitals are present on 96% of hours. The 4% vital gaps are independent draws, not a four-hour or eight-hour nursing round.
 
 ## Run
 
